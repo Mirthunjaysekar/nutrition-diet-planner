@@ -1,0 +1,29 @@
+{
+    "disease": "hypertension",
+    "food_preference": "non-veg",
+    "allergy": "egg",
+    "foods_eaten": [
+        "oats with vegetables",
+        "grilled chicken",
+        "vegetable salad",
+        "sweet corn"
+    ],
+    "actual_nutrition": {
+        "calories": 770,
+        "protein": 62,
+        "carbohydrates": 75,
+        "fat": 23,
+        "fiber": 15,
+        "sodium": 850
+    },
+    "recommended_nutrition_scaled": {
+        "calories": 2666.67,
+        "protein": 96.0,
+        "carbohydrates": 333.33,
+        "fat": 80.0,
+        "fiber": 42.67,
+        "sodium": 2.0
+    },
+    "DDS": 7120.02,
+    "risk_level": "High"
+}

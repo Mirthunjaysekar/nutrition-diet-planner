@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriAI - Smart Meal Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- Animated Background -->
+<div class="animated-bg">
+  <div class="gradient-1"></div>
+  <div class="gradient-2"></div>
+</div>
+
+<!-- Progress Tracker -->
+<div class="progress-tracker">
+  <div class="progress-step active" data-step="1">
+    <div class="step-icon"><i class="fas fa-user"></i></div>
+    <span>Profile</span>
+  </div>
+  <div class="progress-line"></div>
+  <div class="progress-step" data-step="2">
+    <div class="step-icon"><i class="fas fa-heartbeat"></i></div>
+    <span>Health</span>
+  </div>
+  <div class="progress-line"></div>
+  <div class="progress-step" data-step="3">
+    <div class="step-icon"><i class="fas fa-utensils"></i></div>
+    <span>Meal Plan</span>
+  </div>
+  <div class="progress-line"></div>
+  <div class="progress-step" data-step="4">
+    <div class="step-icon"><i class="fas fa-chart-line"></i></div>
+    <span>Analysis</span>
+  </div>
+</div>
+
+<header class="glass-header">
+  <div class="header-content">
+    <div class="logo">
+      <i class="fas fa-robot"></i>
+      <h1>NutriAI</h1>
+    </div>
+    <p class="tagline">Intelligent Meal Planning with Real-time Diet Analytics</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- STEP 1: USER PROFILE -->
+  <section class="glass-card" id="profileCard">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-user-circle"></i>
+      </div>
+      <h2>Personal Information</h2>
+      <p class="header-subtitle">Let's start with your basic details</p>
+    </div>
+
+    <div class="input-grid">
+      <div class="input-group">
+        <label><i class="fas fa-calendar"></i> Age</label>
+        <input type="number" id="age" placeholder="Enter your age" class="modern-input">
+      </div>
+
+      <div class="input-group">
+        <label><i class="fas fa-ruler-vertical"></i> Height (cm)</label>
+        <input type="number" id="height" placeholder="Enter height" class="modern-input">
+      </div>
+
+      <div class="input-group">
+        <label><i class="fas fa-weight-scale"></i> Weight (kg)</label>
+        <input type="number" id="weight" placeholder="Enter weight" class="modern-input">
+      </div>
+    </div>
+
+    <button type="button" onclick="calculateBMI(event)" class="primary-btn">
+      <span>Calculate BMI</span>
+      <i class="fas fa-arrow-right"></i>
+    </button>
+    
+    <div id="bmiResult" class="result-badge">
+      <!-- BMI result will appear here -->
+    </div>
+  </section>
+
+  <!-- STEP 2: HEALTH DETAILS -->
+  <section class="glass-card hidden" id="healthSection">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-heartbeat"></i>
+      </div>
+      <h2>Health Preferences</h2>
+      <p class="header-subtitle">Tell us about your dietary needs</p>
+    </div>
+
+    <div class="input-grid">
+      <div class="input-group">
+        <label><i class="fas fa-notes-medical"></i> Disease Condition</label>
+        <div class="select-wrapper">
+          <select id="disease" class="modern-select">
+            <option value="general">General</option>
+            <option value="diabetes">Diabetes</option>
+            <option value="hypertension">Hypertension</option>
+            <option value="obesity">Obesity</option>
+            <option value="gastric">Gastric</option>
+          </select>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label><i class="fas fa-leaf"></i> Food Preference</label>
+        <div class="toggle-switch">
+          <input type="radio" name="foodPref" id="veg" value="veg" checked>
+          <label for="veg" class="toggle-option">🌱 Vegetarian</label>
+          <input type="radio" name="foodPref" id="nonVeg" value="non-veg">
+          <label for="nonVeg" class="toggle-option">🍗 Non-Veg</label>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label><i class="fas fa-exclamation-triangle"></i> Allergies</label>
+        <div class="select-wrapper">
+          <select id="allergy" class="modern-select">
+            <option value="none">No Allergies</option>
+            <option value="milk">🥛 Milk</option>
+            <option value="nuts">🥜 Nuts</option>
+            <option value="egg">🥚 Egg</option>
+            <option value="gluten">🌾 Gluten</option>
+            <option value="fish">🐟 Fish</option>
+            <option value="chicken">🍗 Chicken</option>
+          </select>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" onclick="showInitialMeal(event)" class="primary-btn">
+      <span>Generate Meal Plan</span>
+      <i class="fas fa-magic"></i>
+    </button>
+  </section>
+
+  <!-- STEP 3: INITIAL MEAL PLAN -->
+  <section class="glass-card hidden" id="initialMeal">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-sun"></i>
+      </div>
+      <h2>Today's Recommended Plan</h2>
+      <p class="header-subtitle">Personalized based on your profile</p>
+    </div>
+
+    <div class="meal-grid">
+      <div class="meal-card breakfast">
+        <div class="meal-icon"><i class="fas fa-coffee"></i></div>
+        <h3>Breakfast</h3>
+        <p id="initBreakfast" class="meal-content">-</p>
+      </div>
+      
+      <div class="meal-card lunch">
+        <div class="meal-icon"><i class="fas fa-utensils"></i></div>
+        <h3>Lunch</h3>
+        <p id="initLunch" class="meal-content">-</p>
+      </div>
+      
+      <div class="meal-card dinner">
+        <div class="meal-icon"><i class="fas fa-moon"></i></div>
+        <h3>Dinner</h3>
+        <p id="initDinner" class="meal-content">-</p>
+      </div>
+      
+      <div class="meal-card snack">
+        <div class="meal-icon"><i class="fas fa-apple-alt"></i></div>
+        <h3>Snack</h3>
+        <p id="initSnack" class="meal-content">-</p>
+      </div>
+    </div>
+
+    <!-- 💾 SAVE INITIAL MEAL PLAN BUTTON -->
+    <button type="button" onclick="saveInitialMealPlan()" class="primary-btn" style="margin-top: 20px;">
+      <span>💾 Save Meal Plan</span>
+      <i class="fas fa-database"></i>
+    </button>
+    <div id="saveMealMsg" style="margin-top:10px; font-weight:500;"></div>
+  </section>
+
+  <!-- STEP 4: FOOD CONSUMED -->
+  <section class="glass-card hidden" id="foodConsumed">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-clipboard-list"></i>
+      </div>
+      <h2>Food Diary</h2>
+      <p class="header-subtitle">What did you eat today?</p>
+    </div>
+
+    <div class="input-group">
+      <label><i class="fas fa-pen"></i> Enter foods (one per line)</label>
+      <textarea id="foods" rows="5" class="modern-textarea"
+        placeholder="e.g.,&#10;oatmeal with berries&#10;grilled chicken salad&#10;brown rice and vegetables"></textarea>
+    </div>
+
+    <button onclick="calculateDDS(event)" class="primary-btn analyze-btn">
+      <span>Analyze Diet</span>
+      <i class="fas fa-chart-bar"></i>
+    </button>
+  </section>
+
+  <!-- STEP 5: DDS -->
+  <section class="glass-card hidden" id="ddsSection">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-chart-pie"></i>
+      </div>
+      <h2>Diet Deviation Score</h2>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon"><i class="fas fa-calculator"></i></div>
+        <div class="metric-label">DDS</div>
+        <div class="metric-value" id="ddsScore">-</div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-icon"><i class="fas fa-weight"></i></div>
+        <div class="metric-label">DW-DDS</div>
+        <div class="metric-value" id="dwDdsScore">-</div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-icon"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="metric-label">Risk Level</div>
+        <div class="metric-value" id="riskLevel">-</div>
+      </div>
+    </div>
+
+    <div id="ddsMessage" class="alert-message">
+      <!-- Alert message will appear here -->
+    </div>
+  </section>
+
+  <!-- STEP 6: DCM -->
+  <section class="glass-card hidden" id="dcmSection">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <h2>Dietary Correction Momentum</h2>
+    </div>
+
+    <div class="momentum-display">
+      <div class="momentum-gauge">
+        <div class="gauge-value" id="dcmValue">-</div>
+        <div class="gauge-label">Momentum Score</div>
+      </div>
+      <div class="momentum-status" id="dcmStatus">
+        <span class="status-badge">Analyzing...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 7: ADAPTIVE MEAL -->
+  <section class="glass-card hidden" id="adaptiveMeal">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-sync-alt"></i>
+      </div>
+      <h2>Adaptive Meal Plan</h2>
+      <p class="header-subtitle">Optimized based on your food log</p>
+    </div>
+
+    <div class="meal-grid">
+      <div class="meal-card breakfast adaptive">
+        <div class="meal-icon"><i class="fas fa-coffee"></i></div>
+        <h3>Breakfast</h3>
+        <p id="adpBreakfast" class="meal-content">-</p>
+      </div>
+      
+      <div class="meal-card lunch adaptive">
+        <div class="meal-icon"><i class="fas fa-utensils"></i></div>
+        <h3>Lunch</h3>
+        <p id="adpLunch" class="meal-content">-</p>
+      </div>
+      
+      <div class="meal-card dinner adaptive">
+        <div class="meal-icon"><i class="fas fa-moon"></i></div>
+        <h3>Dinner</h3>
+        <p id="adpDinner" class="meal-content">-</p>
+      </div>
+      
+      <div class="meal-card snack adaptive">
+        <div class="meal-icon"><i class="fas fa-apple-alt"></i></div>
+        <h3>Snack</h3>
+        <p id="adpSnack" class="meal-content">-</p>
+      </div>
+    </div>
+
+    <!-- 💾 SAVE ADAPTIVE MEAL PLAN BUTTON -->
+    <button type="button" onclick="saveAdaptiveMealPlan()" class="primary-btn" style="margin-top: 20px;">
+      <span>💾 Save Adaptive Plan</span>
+      <i class="fas fa-database"></i>
+    </button>
+    <div id="saveAdaptiveMsg" style="margin-top:10px; font-weight:500;"></div>
+  </section>
+
+  <!-- STEP 8: NDV -->
+  <section class="glass-card hidden" id="ndvSection">
+    <div class="card-header">
+      <div class="header-icon">
+        <i class="fas fa-cubes"></i>
+      </div>
+      <h2>Nutrient Deviation Vector</h2>
+      <p class="header-subtitle">Detailed nutrient analysis</p>
+    </div>
+
+    <div class="ndv-container" id="ndvList">
+      <!-- NDV items will be inserted here -->
+    </div>
+  </section>
+
+</main>
+
+<footer class="glass-footer">
+  <div class="footer-content">
+    <p><i class="fas fa-robot"></i> NutriAI - Smart Nutrition Assistant</p>
+    <p class="college-tag">Academic Project | AI-Powered Meal Planning</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
