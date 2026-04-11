@@ -7,9 +7,6 @@ import json
 import re
 import os
 
-# ================================
-# APP INIT
-# ================================
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(Config)
@@ -23,7 +20,7 @@ class User(db.Model):
     id    = db.Column(db.Integer, primary_key=True)
     name  = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
-    meals = db.relationship('MealPlan', backref='user', lazy=True)
+    # removed relationship — MealPlan.user_id has no ForeignKey constraint
 
 class MealPlan(db.Model):
     __tablename__ = 'meal_plans'
@@ -36,36 +33,28 @@ class MealPlan(db.Model):
     fats         = db.Column(db.Float)
     date_planned = db.Column(db.DateTime, default=datetime.utcnow)
 
-# ================================
-# CREATE TABLES ON STARTUP
-# ================================
 with app.app_context():
     try:
         db.create_all()
-        print("✅ Tables created successfully!")
+        print("✅ Tables ready!")
     except Exception as e:
-        print(f"⚠️ DB init warning: {e}")
+        print(f"⚠️ DB init: {e}")
 
 # ================================
-# GEMINI CONFIG
+# GEMINI
 # ================================
 from google import genai
-
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyCMCvp7Uk89_fhHggGtUCe6NgNQiHUI82I"))
 
 def call_gemini(prompt):
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
-        return response.text
+        return client.models.generate_content(model="gemini-2.0-flash", contents=prompt).text
     except Exception as e:
         print(f"Gemini error: {e}")
         return None
 
 # ================================
-# DCM STORAGE
+# DCM
 # ================================
 DCM_FILE = "/tmp/dcm_state.json"
 
@@ -79,9 +68,8 @@ def save_current_dw_dds(dw_dds):
     with open(DCM_FILE, "w") as f:
         json.dump({"previous_dw_dds": dw_dds}, f)
 
-
 # ================================
-# SERVE FRONTEND FILES
+# FRONTEND
 # ================================
 @app.route("/")
 def serve_index():
@@ -99,9 +87,8 @@ def serve_js():
 def serve_css():
     return send_from_directory(".", "style.css")
 
-
 # ================================
-# LOGIN ROUTE — creates user if not exists
+# LOGIN
 # ================================
 @app.route("/api/login", methods=["POST"])
 def login():
@@ -109,68 +96,53 @@ def login():
         data  = request.get_json()
         name  = data.get("name", "").strip()
         email = data.get("email", "").strip().lower()
-
         if not name or not email:
             return jsonify({"error": "Name and email required"}), 400
-
-        # Find existing user or create new one
         user = User.query.filter_by(email=email).first()
         if not user:
             user = User(name=name, email=email)
             db.session.add(user)
             db.session.commit()
-
         return jsonify({"user_id": user.id, "name": user.name}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-
 # ================================
-# INITIAL MEAL PLAN ROUTE
+# INITIAL MEAL PLAN
 # ================================
 @app.route("/initial-meal-plan")
 def initial_meal_plan():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir  = os.path.dirname(os.path.abspath(__file__))
     json_path = os.path.join(base_dir, "data", "processed")
     return send_from_directory(json_path, "initial_meal_plan.json")
 
-
 # ================================
-# DDS + NDV + DW-DDS + DCM
+# CALCULATE DDS
 # ================================
 @app.route("/calculate-dds", methods=["POST"])
 def calculate_dds():
     data    = request.json
     foods   = data.get("foods", [])
     disease = data.get("disease", "general")
-    user_id = data.get("user_id", 1)   # frontend sends user_id from localStorage
+    user_id = data.get("user_id", 1)
 
     prompt = f"""
     Estimate total daily nutrition for: {foods}
     Return ONLY valid JSON with no markdown:
     {{"calories": number, "protein": number, "carbohydrates": number, "fat": number, "fiber": number, "sodium": number}}
     """
-
     text = call_gemini(prompt)
-    default_nutrition = {
-        "calories": 1800, "protein": 65, "carbohydrates": 220,
-        "fat": 55, "fiber": 25, "sodium": 2000
-    }
-
+    default = {"calories": 1800, "protein": 65, "carbohydrates": 220, "fat": 55, "fiber": 25, "sodium": 2000}
     if not text:
-        actual = default_nutrition
+        actual = default
     else:
         try:
             actual = json.loads(re.sub(r"```json|```", "", text.strip()))
-        except Exception:
-            actual = default_nutrition
+        except:
+            actual = default
 
-    recommended = {
-        "calories": 2000, "protein": 75, "carbohydrates": 250,
-        "fat": 60, "fiber": 30, "sodium": 2300
-    }
-
+    recommended = {"calories": 2000, "protein": 75, "carbohydrates": 250, "fat": 60, "fiber": 30, "sodium": 2300}
     ndv = {n: round((actual[n] - recommended[n]) / recommended[n], 3) for n in recommended}
     ndv_status = {}
     for n, v in ndv.items():
@@ -208,55 +180,39 @@ def calculate_dds():
         "snack":     "Fruit or nuts"
     }
 
-    # AUTO-SAVE with correct user_id
     try:
         meal_label = ", ".join(foods) if isinstance(foods, list) else str(foods)
-        new_meal = MealPlan(
-            user_id=user_id,
-            meal_name=meal_label[:200],
-            calories=actual.get("calories"),
-            protein=actual.get("protein"),
-            carbs=actual.get("carbohydrates"),
-            fats=actual.get("fat")
-        )
-        db.session.add(new_meal)
+        db.session.add(MealPlan(
+            user_id=user_id, meal_name=meal_label[:200],
+            calories=actual.get("calories"), protein=actual.get("protein"),
+            carbs=actual.get("carbohydrates"), fats=actual.get("fat")
+        ))
         db.session.commit()
-    except Exception as db_err:
-        print(f"⚠️ DB save failed: {db_err}")
+    except Exception as e:
+        print(f"⚠️ DB save failed: {e}")
         db.session.rollback()
 
     return jsonify({
-        "actual_nutrition":    actual,
-        "recommended_nutrition": recommended,
-        "NDV":         ndv,
-        "NDV_status":  ndv_status,
-        "DDS":         dds,
-        "DW_DDS":      dw_dds,
-        "DCM_value":   dcm_value,
-        "DCM_status":  dcm_status,
-        "risk_level":  risk,
-        "adaptive_meal_plan": adaptive
+        "actual_nutrition": actual, "recommended_nutrition": recommended,
+        "NDV": ndv, "NDV_status": ndv_status, "DDS": dds,
+        "DW_DDS": dw_dds, "DCM_value": dcm_value, "DCM_status": dcm_status,
+        "risk_level": risk, "adaptive_meal_plan": adaptive
     })
 
-
 # ================================
-# DATABASE ROUTES
+# MEAL ROUTES
 # ================================
 @app.route('/api/save-meal', methods=['POST'])
 def save_meal():
     try:
         data = request.get_json()
-        new_meal = MealPlan(
-            user_id=data.get('user_id', 1),
-            meal_name=data['meal_name'],
-            calories=data.get('calories'),
-            protein=data.get('protein'),
-            carbs=data.get('carbs'),
-            fats=data.get('fats')
-        )
-        db.session.add(new_meal)
+        db.session.add(MealPlan(
+            user_id=data.get('user_id', 1), meal_name=data['meal_name'],
+            calories=data.get('calories'), protein=data.get('protein'),
+            carbs=data.get('carbs'), fats=data.get('fats')
+        ))
         db.session.commit()
-        return jsonify({"message": "✅ Meal saved successfully!"}), 201
+        return jsonify({"message": "✅ Meal saved!"}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -266,16 +222,11 @@ def get_meals():
     try:
         user_id = request.args.get('user_id', 1)
         meals   = MealPlan.query.filter_by(user_id=user_id).all()
-        result  = [{
-            "id":        m.id,
-            "meal_name": m.meal_name,
-            "calories":  m.calories,
-            "protein":   m.protein,
-            "carbs":     m.carbs,
-            "fats":      m.fats,
-            "date":      str(m.date_planned)
-        } for m in meals]
-        return jsonify(result), 200
+        return jsonify([{
+            "id": m.id, "meal_name": m.meal_name, "calories": m.calories,
+            "protein": m.protein, "carbs": m.carbs, "fats": m.fats,
+            "date": str(m.date_planned)
+        } for m in meals]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -284,14 +235,13 @@ def delete_meal(meal_id):
     try:
         meal = MealPlan.query.get(meal_id)
         if not meal:
-            return jsonify({"error": "Meal not found"}), 404
+            return jsonify({"error": "Not found"}), 404
         db.session.delete(meal)
         db.session.commit()
-        return jsonify({"message": "✅ Meal deleted!"}), 200
+        return jsonify({"message": "✅ Deleted!"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 # ================================
 # RUN
