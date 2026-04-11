@@ -1,0 +1,197 @@
+[
+  
+
+  { "disease":"diabetes","food_preference":"veg","allergy":"none",
+    "breakfast":"Oats with vegetables","lunch":"Brown rice with dal","dinner":"Chapati with vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":220,"fat":55,"fiber":30,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"veg","allergy":"milk",
+    "breakfast":"Vegetable poha","lunch":"Brown rice with dal","dinner":"Vegetable curry","snack":"Roasted chana",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":220,"fat":55,"fiber":30,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"veg","allergy":"nuts",
+    "breakfast":"Idli with sambar","lunch":"Vegetable rice","dinner":"Chapati with curry","snack":"Sprouts salad",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":220,"fat":55,"fiber":30,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"veg","allergy":"egg",
+    "breakfast":"Oats with vegetables","lunch":"Brown rice with dal","dinner":"Vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":220,"fat":55,"fiber":30,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"veg","allergy":"fish",
+    "breakfast":"Vegetable upma","lunch":"Brown rice with dal","dinner":"Vegetable stir fry","snack":"Buttermilk",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":220,"fat":55,"fiber":30,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"veg","allergy":"gluten",
+    "breakfast":"Fruit salad","lunch":"Quinoa with vegetables","dinner":"Vegetable curry","snack":"Roasted chana",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":200,"fat":55,"fiber":32,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"veg","allergy":"chicken",
+    "breakfast":"Oats with vegetables","lunch":"Brown rice with dal","dinner":"Vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":220,"fat":55,"fiber":30,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"non-veg","allergy":"none",
+    "breakfast":"Vegetable omelette","lunch":"Grilled chicken salad","dinner":"Fish curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":75,"carbohydrates":200,"fat":55,"fiber":28,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"non-veg","allergy":"milk",
+    "breakfast":"Vegetable omelette","lunch":"Grilled chicken salad","dinner":"Fish curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":75,"carbohydrates":200,"fat":55,"fiber":28,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"non-veg","allergy":"nuts",
+    "breakfast":"Vegetable omelette","lunch":"Grilled chicken salad","dinner":"Fish curry","snack":"Sprouts salad",
+    "recommended_nutrition":{"calories":1800,"protein":75,"carbohydrates":200,"fat":55,"fiber":28,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"non-veg","allergy":"egg",
+    "breakfast":"Vegetable oats","lunch":"Grilled chicken salad","dinner":"Fish curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":75,"carbohydrates":200,"fat":55,"fiber":28,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"non-veg","allergy":"fish",
+    "breakfast":"Vegetable omelette","lunch":"Grilled chicken salad","dinner":"Vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":75,"carbohydrates":200,"fat":55,"fiber":28,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"non-veg","allergy":"gluten",
+    "breakfast":"Fruit bowl","lunch":"Grilled chicken with vegetables","dinner":"Fish curry","snack":"Roasted chana",
+    "recommended_nutrition":{"calories":1800,"protein":75,"carbohydrates":190,"fat":55,"fiber":30,"sodium":1.5} },
+
+  { "disease":"diabetes","food_preference":"non-veg","allergy":"chicken",
+    "breakfast":"Vegetable omelette","lunch":"Fish curry with rice","dinner":"Vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":1800,"protein":75,"carbohydrates":200,"fat":55,"fiber":28,"sodium":1.5} },
+
+ 
+
+  { "disease":"hypertension","food_preference":"veg","allergy":"none",
+    "breakfast":"Idli with sambar","lunch":"Vegetable rice","dinner":"Chapati with curry","snack":"Buttermilk",
+    "recommended_nutrition":{"calories":2000,"protein":65,"carbohydrates":260,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"veg","allergy":"milk",
+    "breakfast":"Vegetable poha","lunch":"Vegetable rice","dinner":"Chapati with curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":2000,"protein":65,"carbohydrates":260,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"veg","allergy":"nuts",
+    "breakfast":"Upma","lunch":"Vegetable rice","dinner":"Chapati with curry","snack":"Sprouts salad",
+    "recommended_nutrition":{"calories":2000,"protein":65,"carbohydrates":260,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"veg","allergy":"egg",
+    "breakfast":"Vegetable oats","lunch":"Vegetable rice","dinner":"Chapati with curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":2000,"protein":65,"carbohydrates":260,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"veg","allergy":"fish",
+    "breakfast":"Idli","lunch":"Vegetable rice","dinner":"Vegetable curry","snack":"Buttermilk",
+    "recommended_nutrition":{"calories":2000,"protein":65,"carbohydrates":260,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"veg","allergy":"gluten",
+    "breakfast":"Fruit salad","lunch":"Quinoa vegetable bowl","dinner":"Vegetable curry","snack":"Green tea",
+    "recommended_nutrition":{"calories":2000,"protein":65,"carbohydrates":240,"fat":60,"fiber":32,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"veg","allergy":"chicken",
+    "breakfast":"Idli","lunch":"Vegetable rice","dinner":"Vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":2000,"protein":65,"carbohydrates":260,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"non-veg","allergy":"none",
+    "breakfast":"Boiled eggs","lunch":"Grilled chicken salad","dinner":"Fish curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":2000,"protein":72,"carbohydrates":250,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"non-veg","allergy":"egg",
+    "breakfast":"Boiled chickpeas","lunch":"Avocado chickpea salad","dinner":"Vegetable curry","snack":"Protein bar",
+    "recommended_nutrition":{"calories":2000,"protein":72,"carbohydrates":250,"fat":60,"fiber":32,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"non-veg","allergy":"fish",
+    "breakfast":"Boiled eggs","lunch":"Grilled chicken salad","dinner":"Vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":2000,"protein":72,"carbohydrates":250,"fat":60,"fiber":30,"sodium":1.5} },
+
+  { "disease":"hypertension","food_preference":"non-veg","allergy":"chicken",
+    "breakfast":"Boiled eggs","lunch":"Fish curry with rice","dinner":"Vegetable curry","snack":"Fruit bowl",
+    "recommended_nutrition":{"calories":2000,"protein":72,"carbohydrates":250,"fat":60,"fiber":30,"sodium":1.5} },
+
+  
+
+  { "disease":"obesity","food_preference":"veg","allergy":"none",
+    "breakfast":"Fruit salad","lunch":"Quinoa vegetable bowl","dinner":"Steamed vegetables","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":80,"carbohydrates":170,"fat":45,"fiber":35,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"veg","allergy":"milk",
+    "breakfast":"Fruit salad","lunch":"Vegetable soup","dinner":"Steamed vegetables","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":80,"carbohydrates":170,"fat":45,"fiber":35,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"veg","allergy":"nuts",
+    "breakfast":"Fruit salad","lunch":"Vegetable soup","dinner":"Steamed vegetables","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":80,"carbohydrates":170,"fat":45,"fiber":35,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"veg","allergy":"egg",
+    "breakfast":"Fruit salad","lunch":"Quinoa vegetable bowl","dinner":"Steamed vegetables","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":80,"carbohydrates":170,"fat":45,"fiber":35,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"veg","allergy":"fish",
+    "breakfast":"Fruit salad","lunch":"Quinoa vegetable bowl","dinner":"Steamed vegetables","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":80,"carbohydrates":170,"fat":45,"fiber":35,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"veg","allergy":"gluten",
+    "breakfast":"Fruit bowl","lunch":"Quinoa with vegetables","dinner":"Vegetable curry","snack":"Roasted chana",
+    "recommended_nutrition":{"calories":1500,"protein":80,"carbohydrates":165,"fat":45,"fiber":35,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"veg","allergy":"chicken",
+    "breakfast":"Fruit salad","lunch":"Vegetable soup","dinner":"Steamed vegetables","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":80,"carbohydrates":170,"fat":45,"fiber":35,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"non-veg","allergy":"none",
+    "breakfast":"Boiled eggs","lunch":"Grilled chicken salad","dinner":"Fish curry","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":85,"carbohydrates":160,"fat":45,"fiber":34,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"non-veg","allergy":"egg",
+    "breakfast":"Fruit salad","lunch":"Grilled chicken salad","dinner":"Fish curry","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":85,"carbohydrates":160,"fat":45,"fiber":34,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"non-veg","allergy":"fish",
+    "breakfast":"Boiled eggs","lunch":"Grilled chicken salad","dinner":"Vegetable curry","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":85,"carbohydrates":160,"fat":45,"fiber":34,"sodium":1.3} },
+
+  { "disease":"obesity","food_preference":"non-veg","allergy":"chicken",
+    "breakfast":"Boiled eggs","lunch":"Fish curry with vegetables","dinner":"Steamed vegetables","snack":"Green tea",
+    "recommended_nutrition":{"calories":1500,"protein":85,"carbohydrates":160,"fat":45,"fiber":34,"sodium":1.3} },
+
+  
+
+  { "disease":"gastric","food_preference":"veg","allergy":"none",
+    "breakfast":"Idli","lunch":"Curd rice","dinner":"Vegetable soup","snack":"Banana",
+    "recommended_nutrition":{"calories":1800,"protein":60,"carbohydrates":260,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"veg","allergy":"milk",
+    "breakfast":"Idli","lunch":"Vegetable rice","dinner":"Vegetable soup","snack":"Papaya",
+    "recommended_nutrition":{"calories":1800,"protein":60,"carbohydrates":250,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"veg","allergy":"nuts",
+    "breakfast":"Idli","lunch":"Vegetable rice","dinner":"Vegetable soup","snack":"Banana",
+    "recommended_nutrition":{"calories":1800,"protein":60,"carbohydrates":260,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"veg","allergy":"egg",
+    "breakfast":"Idli","lunch":"Vegetable rice","dinner":"Vegetable soup","snack":"Papaya",
+    "recommended_nutrition":{"calories":1800,"protein":60,"carbohydrates":260,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"veg","allergy":"fish",
+    "breakfast":"Fruit bowl","lunch":"Rice with vegetables","dinner":"Vegetable soup","snack":"Banana",
+    "recommended_nutrition":{"calories":1800,"protein":60,"carbohydrates":260,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"veg","allergy":"gluten",
+    "breakfast":"Fruit bowl","lunch":"Rice with vegetables","dinner":"Vegetable soup","snack":"Banana",
+    "recommended_nutrition":{"calories":1800,"protein":60,"carbohydrates":250,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"veg","allergy":"chicken",
+    "breakfast":"Fruit bowl","lunch":"Rice with vegetables","dinner":"Vegetable soup","snack":"Papaya",
+    "recommended_nutrition":{"calories":1800,"protein":60,"carbohydrates":260,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"non-veg","allergy":"none",
+    "breakfast":"Boiled eggs","lunch":"Steamed chicken with rice","dinner":"Vegetable soup","snack":"Banana",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":240,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"non-veg","allergy":"egg",
+    "breakfast":"Fruit bowl","lunch":"Steamed chicken with rice","dinner":"Vegetable soup","snack":"Papaya",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":240,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"non-veg","allergy":"fish",
+    "breakfast":"Boiled eggs","lunch":"Steamed chicken with rice","dinner":"Vegetable soup","snack":"Banana",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":240,"fat":50,"fiber":25,"sodium":1.8} },
+
+  { "disease":"gastric","food_preference":"non-veg","allergy":"chicken",
+    "breakfast":"Fruit bowl","lunch":"Fish curry with rice","dinner":"Vegetable soup","snack":"Papaya",
+    "recommended_nutrition":{"calories":1800,"protein":70,"carbohydrates":240,"fat":50,"fiber":25,"sodium":1.8} }
+]

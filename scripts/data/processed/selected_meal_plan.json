@@ -1,0 +1,17 @@
+{
+  "disease": "hypertension",
+  "food_preference": "non-veg",
+  "allergy": "egg",
+  "breakfast": "Boiled chickpeas",
+  "lunch": "Avocado chickpea salad",
+  "dinner": "Vegetable curry",
+  "snack": "Protein bar",
+  "recommended_nutrition": {
+    "calories": 2000,
+    "protein": 72,
+    "carbohydrates": 250,
+    "fat": 60,
+    "fiber": 32,
+    "sodium": 1.5
+  }
+}

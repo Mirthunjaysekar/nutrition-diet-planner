@@ -1,0 +1,20 @@
+{
+    "DDS": 7120.02,
+    "risk_level": "High",
+    "nutrient_deficiency": [
+        "calories",
+        "protein",
+        "carbohydrates",
+        "fat",
+        "fiber"
+    ],
+    "nutrient_excess": [
+        "sodium"
+    ],
+    "adaptive_meal_plan": {
+        "breakfast": "2 Whole wheat paneer stuffed parathas (prepared with minimal salt and olive oil) served with 1 cup of plain low-fat curd and a handful of soaked almonds.",
+        "lunch": "1 cup Brown rice, 2 small whole wheat rotis, 150g skinless Chicken curry (cooked with ginger, garlic, and turmeric; low sodium), and a large bowl of saut\u00e9ed spinach and carrots.",
+        "dinner": "150g Lemon-garlic grilled fish (Pomfret or Rohu) served with 1 cup of Vegetable Dalia (broken wheat) khichdi containing peas and beans, with no added table salt.",
+        "snack": "A large bowl of mixed sprouts salad (moong and chana) with chopped tomatoes, onions, and freshly squeezed lemon juice (no salt added), plus one medium apple."
+    }
+}
