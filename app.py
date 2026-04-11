@@ -37,14 +37,14 @@ class MealPlan(db.Model):
     date_planned = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ================================
-# CREATE TABLES — won't crash if DB is slow to connect
+# CREATE TABLES ON STARTUP
 # ================================
 with app.app_context():
     try:
         db.create_all()
         print("✅ Tables created successfully!")
     except Exception as e:
-        print(f"⚠️ DB init warning (tables may already exist): {e}")
+        print(f"⚠️ DB init warning: {e}")
 
 # ================================
 # GEMINI CONFIG
@@ -87,6 +87,10 @@ def save_current_dw_dds(dw_dds):
 def serve_index():
     return send_from_directory(".", "index.html")
 
+@app.route("/login")
+def serve_login():
+    return send_from_directory(".", "login.html")
+
 @app.route("/script.js")
 def serve_js():
     return send_from_directory(".", "script.js")
@@ -94,6 +98,32 @@ def serve_js():
 @app.route("/style.css")
 def serve_css():
     return send_from_directory(".", "style.css")
+
+
+# ================================
+# LOGIN ROUTE — creates user if not exists
+# ================================
+@app.route("/api/login", methods=["POST"])
+def login():
+    try:
+        data  = request.get_json()
+        name  = data.get("name", "").strip()
+        email = data.get("email", "").strip().lower()
+
+        if not name or not email:
+            return jsonify({"error": "Name and email required"}), 400
+
+        # Find existing user or create new one
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            user = User(name=name, email=email)
+            db.session.add(user)
+            db.session.commit()
+
+        return jsonify({"user_id": user.id, "name": user.name}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 # ================================
@@ -111,9 +141,10 @@ def initial_meal_plan():
 # ================================
 @app.route("/calculate-dds", methods=["POST"])
 def calculate_dds():
-    data = request.json
-    foods = data.get("foods", [])
+    data    = request.json
+    foods   = data.get("foods", [])
     disease = data.get("disease", "general")
+    user_id = data.get("user_id", 1)   # frontend sends user_id from localStorage
 
     prompt = f"""
     Estimate total daily nutrition for: {foods}
@@ -156,12 +187,12 @@ def calculate_dds():
         "gastric":      {"fiber": 1.8, "fat": 1.5, "protein": 1.2},
         "general":      {}
     }
-    weights = disease_weights.get(disease, {})
+    weights      = disease_weights.get(disease, {})
     weighted_sum = sum(abs(ndv[n]) * weights.get(n, 1.0) for n in ndv)
     weight_total = sum(weights.get(n, 1.0) for n in ndv)
-    dw_dds = round((weighted_sum / weight_total) * 100, 2)
+    dw_dds       = round((weighted_sum / weight_total) * 100, 2)
 
-    prev = load_previous_dw_dds()
+    prev      = load_previous_dw_dds()
     dcm_value = round((prev - dw_dds) / prev, 3) if prev else 0.0
     if dcm_value > 0.10:    dcm_status = "Strong Improvement"
     elif dcm_value > 0.03:  dcm_status = "Moderate Improvement"
@@ -172,15 +203,16 @@ def calculate_dds():
     risk = "Low" if dw_dds < 40 else "Medium" if dw_dds < 60 else "High"
     adaptive = {
         "breakfast": "Vegetable oats with paneer",
-        "lunch": "Brown rice with dal and vegetables",
-        "dinner": "Chapati with curry",
-        "snack": "Fruit or nuts"
+        "lunch":     "Brown rice with dal and vegetables",
+        "dinner":    "Chapati with curry",
+        "snack":     "Fruit or nuts"
     }
 
+    # AUTO-SAVE with correct user_id
     try:
         meal_label = ", ".join(foods) if isinstance(foods, list) else str(foods)
         new_meal = MealPlan(
-            user_id=1,
+            user_id=user_id,
             meal_name=meal_label[:200],
             calories=actual.get("calories"),
             protein=actual.get("protein"),
@@ -194,15 +226,15 @@ def calculate_dds():
         db.session.rollback()
 
     return jsonify({
-        "actual_nutrition": actual,
+        "actual_nutrition":    actual,
         "recommended_nutrition": recommended,
-        "NDV": ndv,
-        "NDV_status": ndv_status,
-        "DDS": dds,
-        "DW_DDS": dw_dds,
-        "DCM_value": dcm_value,
-        "DCM_status": dcm_status,
-        "risk_level": risk,
+        "NDV":         ndv,
+        "NDV_status":  ndv_status,
+        "DDS":         dds,
+        "DW_DDS":      dw_dds,
+        "DCM_value":   dcm_value,
+        "DCM_status":  dcm_status,
+        "risk_level":  risk,
         "adaptive_meal_plan": adaptive
     })
 
@@ -232,12 +264,16 @@ def save_meal():
 @app.route('/api/get-meals', methods=['GET'])
 def get_meals():
     try:
-        meals = MealPlan.query.all()
-        result = [{
-            "id": m.id, "meal_name": m.meal_name,
-            "calories": m.calories, "protein": m.protein,
-            "carbs": m.carbs, "fats": m.fats,
-            "date": str(m.date_planned)
+        user_id = request.args.get('user_id', 1)
+        meals   = MealPlan.query.filter_by(user_id=user_id).all()
+        result  = [{
+            "id":        m.id,
+            "meal_name": m.meal_name,
+            "calories":  m.calories,
+            "protein":   m.protein,
+            "carbs":     m.carbs,
+            "fats":      m.fats,
+            "date":      str(m.date_planned)
         } for m in meals]
         return jsonify(result), 200
     except Exception as e:
