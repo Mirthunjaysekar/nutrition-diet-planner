@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NutriAI – Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    p.subtitle {
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+      margin-bottom: 36px;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input:focus {
+      border-color: #7c6bff;
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.3); }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      background: linear-gradient(135deg, #7c6bff, #5a4fcf);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .error {
+      background: rgba(255,80,80,0.15);
+      border: 1px solid rgba(255,80,80,0.3);
+      color: #ff6b6b;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🥗</div>
+    <h1>NutriAI</h1>
+    <p class="subtitle">Enter your details to continue</p>
+
+    <div class="error" id="error-msg"></div>
+
+    <div class="input-group">
+      <label>Full Name</label>
+      <input type="text" id="name" placeholder="e.g. Mirthun Jay" />
+    </div>
+
+    <div class="input-group">
+      <label>Email Address</label>
+      <input type="email" id="email" placeholder="e.g. mirthun@email.com" />
+    </div>
+
+    <button onclick="login()">Continue to App →</button>
+  </div>
+
+  <script>
+    // If already logged in, skip login page
+    if (localStorage.getItem('nutri_user_id')) {
+      window.location.href = '/';
+    }
+
+    async function login() {
+      const name  = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const errEl = document.getElementById('error-msg');
+
+      if (!name || !email) {
+        errEl.textContent = 'Please fill in both fields.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res  = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email })
+        });
+        const data = await res.json();
+
+        if (data.user_id) {
+          localStorage.setItem('nutri_user_id', data.user_id);
+          localStorage.setItem('nutri_user_name', data.name);
+          window.location.href = '/';
+        } else {
+          errEl.textContent = data.error || 'Login failed.';
+          errEl.style.display = 'block';
+        }
+      } catch (e) {
+        errEl.textContent = 'Server error. Please try again.';
+        errEl.style.display = 'block';
+      }
+    }
+
+    // Allow Enter key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+  </script>
+</body>
+</html>
