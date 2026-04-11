@@ -1,543 +1,364 @@
 /* ================================
-   UTIL: LOCAL STORAGE HELPERS
+   CONFIG — auto-detects local vs Railway
 ================================ */
+const API_URL = window.location.hostname === "127.0.0.1"
+  ? "http://127.0.0.1:5000"
+  : "";
 
-function save(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+/* ================================
+   UTIL
+================================ */
+function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+function load(key) { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+function getUserId() { return localStorage.getItem('nutri_user_id') || 1; }
+
+/* ================================
+   RADAR CHART
+================================ */
+let radarChartInstance = null;
+
+function drawRadarChart(actual, recommended) {
+  const labels = ['Calories', 'Protein', 'Carbs', 'Fat', 'Fiber', 'Sodium'];
+  const keys   = ['calories', 'protein', 'carbohydrates', 'fat', 'fiber', 'sodium'];
+  const actualPct = keys.map(k => Math.round((actual[k] / recommended[k]) * 100));
+
+  const ctx = document.getElementById('ndvRadarChart').getContext('2d');
+  if (radarChartInstance) { radarChartInstance.destroy(); radarChartInstance = null; }
+
+  radarChartInstance = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Your Intake (%)',
+          data: actualPct,
+          backgroundColor: 'rgba(99,102,241,0.25)',
+          borderColor: 'rgba(99,102,241,0.9)',
+          borderWidth: 2.5,
+          pointBackgroundColor: 'rgba(99,102,241,1)',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+        {
+          label: 'Recommended (100%)',
+          data: labels.map(() => 100),
+          backgroundColor: 'rgba(16,185,129,0.10)',
+          borderColor: 'rgba(16,185,129,0.6)',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 160,
+          ticks: { stepSize: 40, color: '#888', font: { size: 10 }, callback: v => v + '%' },
+          grid: { color: 'rgba(150,150,150,0.2)' },
+          angleLines: { color: 'rgba(150,150,150,0.2)' },
+          pointLabels: { font: { size: 12, weight: '600' }, color: '#555' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } }
+      }
+    }
+  });
 }
 
-function load(key) {
-  const val = localStorage.getItem(key);
-  return val ? JSON.parse(val) : null;
+function renderStatusPills(ndvStatus) {
+  const container = document.getElementById('ndvStatusPills');
+  if (!container) return;
+  container.innerHTML = '';
+  const colorMap = {
+    'Optimal':   { bg: '#d1fae5', color: '#065f46', icon: '✅' },
+    'Deficient': { bg: '#fef3c7', color: '#92400e', icon: '⚠️' },
+    'Excess':    { bg: '#fee2e2', color: '#991b1b', icon: '🚨' }
+  };
+  Object.entries(ndvStatus).forEach(([nutrient, status]) => {
+    const s = colorMap[status] || { bg: '#f3f4f6', color: '#374151', icon: '•' };
+    const pill = document.createElement('span');
+    pill.className = 'ndv-pill';
+    pill.style.cssText = `background:${s.bg};color:${s.color};`;
+    pill.innerHTML = `${s.icon} ${nutrient}: <strong>${status}</strong>`;
+    container.appendChild(pill);
+  });
 }
 
 /* ================================
-   UI UPDATE HELPERS
+   UI HELPERS
 ================================ */
-
 function updateProgressStep(step) {
-  document.querySelectorAll('.progress-step').forEach((el, index) => {
-    if (index + 1 <= step) {
-      el.classList.add('active');
-    } else {
-      el.classList.remove('active');
-    }
+  document.querySelectorAll('.progress-step').forEach((el, i) => {
+    el.classList.toggle('active', i + 1 <= step);
   });
 }
 
 function showAlert(message, type = 'info') {
-  const alertDiv = document.createElement('div');
-  alertDiv.className = `alert-message ${type}`;
-  alertDiv.innerHTML = message;
-  
-  const container = document.querySelector('.container');
-  container.insertBefore(alertDiv, container.firstChild);
-  
-  setTimeout(() => {
-    alertDiv.remove();
-  }, 3000);
+  const d = document.createElement('div');
+  d.className = `alert-message ${type}`;
+  d.innerHTML = message;
+  const c = document.querySelector('.container');
+  c.insertBefore(d, c.firstChild);
+  setTimeout(() => d.remove(), 3000);
 }
 
 /* ================================
-   STEP 1: BMI CALCULATION
+   STEP 1: BMI
 ================================ */
-
 function calculateBMI() {
   const age = document.getElementById("age").value;
   const height = document.getElementById("height").value;
   const weight = document.getElementById("weight").value;
+  if (!age || !height || !weight) { showAlert("Please enter age, height and weight", "error"); return; }
 
-  if (!age || !height || !weight) {
-    showAlert("Please enter age, height and weight", "error");
-    return;
-  }
+  const bmi = (weight / ((height / 100) ** 2)).toFixed(2);
+  let category = "", color = "";
+  if (bmi < 18.5)    { category = "Underweight"; color = "#f39c12"; }
+  else if (bmi < 25) { category = "Normal";      color = "#2ecc71"; }
+  else if (bmi < 30) { category = "Overweight";  color = "#e67e22"; }
+  else               { category = "Obese";        color = "#e74c3c"; }
 
-  const heightMeters = height / 100;
-  const bmi = (weight / (heightMeters * heightMeters)).toFixed(2);
-
-  let category = "";
-  let color = "";
-  if (bmi < 18.5) {
-    category = "Underweight";
-    color = "#f39c12";
-  } else if (bmi < 25) {
-    category = "Normal";
-    color = "#2ecc71";
-  } else if (bmi < 30) {
-    category = "Overweight";
-    color = "#e67e22";
-  } else {
-    category = "Obese";
-    color = "#e74c3c";
-  }
-
-  const bmiText = `BMI: ${bmi} (${category})`;
-  const resultElement = document.getElementById("bmiResult");
-  resultElement.innerText = bmiText;
-  resultElement.style.color = color;
-  resultElement.style.borderColor = color;
-
+  const el = document.getElementById("bmiResult");
+  el.innerText = `BMI: ${bmi} (${category})`;
+  el.style.color = color;
+  el.style.borderColor = color;
   document.getElementById("healthSection").classList.remove("hidden");
   updateProgressStep(2);
-
   save("userProfile", { age, height, weight });
-  save("bmiResult", bmiText);
-  
-  // Smooth scroll to next section
   document.getElementById("healthSection").scrollIntoView({ behavior: 'smooth' });
 }
 
 /* ================================
-   STEP 2: INITIAL MEAL PLANNER
+   STEP 2: INITIAL MEAL
 ================================ */
-
 async function showInitialMeal() {
-
   document.getElementById("initialMeal").classList.remove("hidden");
   document.getElementById("foodConsumed").classList.remove("hidden");
   updateProgressStep(3);
 
-  const disease = document.getElementById("disease").value;
+  const disease  = document.getElementById("disease").value;
   const foodPref = document.querySelector('input[name="foodPref"]:checked').value;
-  const allergy = document.getElementById("allergy").value;
-
+  const allergy  = document.getElementById("allergy").value;
   save("healthDetails", { disease, foodPref, allergy });
 
   try {
-    // Show loading state
-    const mealElements = ['initBreakfast', 'initLunch', 'initDinner', 'initSnack'];
-    mealElements.forEach(id => {
+    ['initBreakfast','initLunch','initDinner','initSnack'].forEach(id => {
       document.getElementById(id).innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
     });
-
-    const res = await fetch("http://127.0.0.1:5000/initial-meal-plan");
-
-    if (!res.ok) {
-      throw new Error("Initial meal JSON not found from backend");
-    }
-
-    const mealPlans = await res.json();
-
-    const matchedPlan =
-      mealPlans.find(p =>
-        p.disease === disease &&
-        p.food_preference === foodPref &&
-        p.allergy === allergy
-      ) ||
-      mealPlans.find(p =>
-        p.disease === disease &&
-        p.food_preference === foodPref
-      ) ||
-      mealPlans[0];
-
-    if (!matchedPlan) {
-      throw new Error("No meal plan match found");
-    }
-
-    document.getElementById("initBreakfast").innerText = matchedPlan.breakfast || "-";
-    document.getElementById("initLunch").innerText = matchedPlan.lunch || "-";
-    document.getElementById("initDinner").innerText = matchedPlan.dinner || "-";
-    document.getElementById("initSnack").innerText = matchedPlan.snack || "-";
-
-    save("initialMeal", matchedPlan);
-    
-    // Smooth scroll to meal plan
+    const res = await fetch(`${API_URL}/initial-meal-plan`);
+    if (!res.ok) throw new Error("failed");
+    const plans = await res.json();
+    const plan = plans.find(p => p.disease===disease && p.food_preference===foodPref && p.allergy===allergy)
+               || plans.find(p => p.disease===disease && p.food_preference===foodPref)
+               || plans[0];
+    document.getElementById("initBreakfast").innerText = plan.breakfast || "-";
+    document.getElementById("initLunch").innerText     = plan.lunch     || "-";
+    document.getElementById("initDinner").innerText    = plan.dinner    || "-";
+    document.getElementById("initSnack").innerText     = plan.snack     || "-";
+    save("initialMeal", plan);
     document.getElementById("initialMeal").scrollIntoView({ behavior: 'smooth' });
-
-  } catch (err) {
-    console.error("Initial meal fetch failed:", err);
-    
-    // Fallback meal plan for demo
-    const fallbackPlan = {
-      breakfast: "Oatmeal with fruits",
-      lunch: "Grilled chicken salad",
-      dinner: "Brown rice with vegetables",
-      snack: "Greek yogurt"
-    };
-    
-    document.getElementById("initBreakfast").innerText = fallbackPlan.breakfast;
-    document.getElementById("initLunch").innerText = fallbackPlan.lunch;
-    document.getElementById("initDinner").innerText = fallbackPlan.dinner;
-    document.getElementById("initSnack").innerText = fallbackPlan.snack;
-    
-    showAlert("Using demo meal plan (backend not connected)", "warning");
+  } catch {
+    const defaults = ["Oatmeal with fruits","Grilled chicken salad","Brown rice with vegetables","Greek yogurt"];
+    ["initBreakfast","initLunch","initDinner","initSnack"].forEach((id, i) => {
+      document.getElementById(id).innerText = defaults[i];
+    });
+    showAlert("Using demo meal plan", "warning");
   }
 }
 
 /* ================================
-   STEP 3: DDS + NDV + DW-DDS + DCM
+   STEP 3: CALCULATE DDS + RADAR
 ================================ */
-
 async function calculateDDS() {
-
   const foodText = document.getElementById("foods").value.trim();
-  if (!foodText) {
-    showAlert("Please enter foods eaten today", "error");
-    return;
-  }
+  if (!foodText) { showAlert("Please enter foods eaten today", "error"); return; }
 
-  const foods = foodText
-    .split("\n")
-    .map(f => f.trim())
-    .filter(Boolean);
-
+  const foods   = foodText.split("\n").map(f => f.trim()).filter(Boolean);
   const disease = document.getElementById("disease").value || "general";
+  const user_id = parseInt(getUserId());
 
   try {
-    // Show loading states
-    document.getElementById("ddsScore").innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    document.getElementById("ddsScore").innerHTML   = '<i class="fas fa-spinner fa-spin"></i>';
     document.getElementById("dwDdsScore").innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    document.getElementById("riskLevel").innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    document.getElementById("riskLevel").innerHTML  = '<i class="fas fa-spinner fa-spin"></i>';
 
-    const response = await fetch("http://127.0.0.1:5000/calculate-dds", {
+    const response = await fetch(`${API_URL}/calculate-dds`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ foods, disease })
+      body: JSON.stringify({ foods, disease, user_id })
     });
-
-    if (!response.ok) {
-      throw new Error("Backend error");
-    }
-
+    if (!response.ok) throw new Error("Backend error");
     const data = await response.json();
 
-    // Show all result sections
-    document.getElementById("ddsSection").classList.remove("hidden");
-    document.getElementById("adaptiveMeal").classList.remove("hidden");
-    document.getElementById("ndvSection").classList.remove("hidden");
-    document.getElementById("dcmSection").classList.remove("hidden");
+    ["ddsSection","adaptiveMeal","ndvSection","dcmSection"].forEach(id => {
+      document.getElementById(id).classList.remove("hidden");
+    });
     updateProgressStep(4);
 
-    // Update DDS values
-    document.getElementById("ddsScore").innerText = data.DDS;
+    // Scores
+    document.getElementById("ddsScore").innerText   = data.DDS;
     document.getElementById("dwDdsScore").innerText = data.DW_DDS;
-    
-    // Update risk level with color
-    const riskElement = document.getElementById("riskLevel");
-    riskElement.innerText = data.risk_level;
-    
-    // Set risk level color
+    const riskEl = document.getElementById("riskLevel");
+    riskEl.innerText   = data.risk_level;
+    riskEl.style.color = data.risk_level === "Low" ? "#2ecc71" : data.risk_level === "Medium" ? "#f39c12" : "#e74c3c";
+
+    const msgEl = document.getElementById("ddsMessage");
     if (data.risk_level === "Low") {
-      riskElement.style.color = "#2ecc71";
+      msgEl.innerHTML = '✅ Excellent! Your diet is well balanced. Keep up the good work!';
+      msgEl.style.background = "linear-gradient(135deg, #d4edda, #c3e6cb)";
     } else if (data.risk_level === "Medium") {
-      riskElement.style.color = "#f39c12";
+      msgEl.innerHTML = '⚠️ Minor imbalance detected. Follow the adaptive meal plan for correction.';
+      msgEl.style.background = "linear-gradient(135deg, #fff3cd, #ffeeba)";
     } else {
-      riskElement.style.color = "#e74c3c";
+      msgEl.innerHTML = '🚨 High deviation detected. Immediate dietary correction required!';
+      msgEl.style.background = "linear-gradient(135deg, #f8d7da, #f5c6cb)";
     }
 
-    // Update message with appropriate icon
-    const messageElement = document.getElementById("ddsMessage");
-    if (data.risk_level === "Low") {
-      messageElement.innerHTML = '✅ Excellent! Your diet is well balanced. Keep up the good work!';
-      messageElement.style.background = "linear-gradient(135deg, #d4edda, #c3e6cb)";
-    } else if (data.risk_level === "Medium") {
-      messageElement.innerHTML = '⚠️ Minor imbalance detected. Follow the adaptive meal plan for correction.';
-      messageElement.style.background = "linear-gradient(135deg, #fff3cd, #ffeeba)";
-    } else {
-      messageElement.innerHTML = '🚨 High deviation detected. Immediate dietary correction required!';
-      messageElement.style.background = "linear-gradient(135deg, #f8d7da, #f5c6cb)";
-    }
-
-    // Update adaptive meal plan
+    // Meals
     document.getElementById("adpBreakfast").innerText = data.adaptive_meal_plan.breakfast;
-    document.getElementById("adpLunch").innerText = data.adaptive_meal_plan.lunch;
-    document.getElementById("adpDinner").innerText = data.adaptive_meal_plan.dinner;
-    document.getElementById("adpSnack").innerText = data.adaptive_meal_plan.snack;
+    document.getElementById("adpLunch").innerText     = data.adaptive_meal_plan.lunch;
+    document.getElementById("adpDinner").innerText    = data.adaptive_meal_plan.dinner;
+    document.getElementById("adpSnack").innerText     = data.adaptive_meal_plan.snack;
 
-    // Update NDV with visual elements
+    // ✅ RADAR CHART
+    drawRadarChart(data.actual_nutrition, data.recommended_nutrition);
+
+    // ✅ STATUS PILLS
+    renderStatusPills(data.NDV_status);
+
+    // NDV bars
     const ndvList = document.getElementById("ndvList");
     ndvList.innerHTML = "";
-
     Object.entries(data.NDV).forEach(([n, v]) => {
       const div = document.createElement("div");
       div.className = "ndv-item";
-      
-      // Calculate color based on deviation
       let color = "#2ecc71";
       if (Math.abs(v) > 30) color = "#e74c3c";
       else if (Math.abs(v) > 15) color = "#f39c12";
-      
       div.innerHTML = `
         <div class="ndv-label">${n}</div>
-        <div class="ndv-value" style="color: ${color}">${v}</div>
+        <div class="ndv-value" style="color:${color}">${v}</div>
         <div class="ndv-bar">
-          <div class="ndv-bar-fill" style="width: ${Math.min(Math.abs(v), 100)}%; background: ${color}"></div>
-        </div>
-      `;
-      
+          <div class="ndv-bar-fill" style="width:${Math.min(Math.abs(v)*100,100)}%;background:${color}"></div>
+        </div>`;
       ndvList.appendChild(div);
     });
 
-    // Update DCM with animation
+    // DCM
     document.getElementById("dcmValue").innerText = data.DCM_value;
-    const dcmStatus = document.getElementById("dcmStatus");
-    
-    let statusText = data.DCM_status;
-    let statusColor = "#2ecc71";
-    
-    if (data.DCM_status.includes("Negative")) {
-      statusColor = "#e74c3c";
-    } else if (data.DCM_status.includes("Positive")) {
-      statusColor = "#2ecc71";
-    } else {
-      statusColor = "#f39c12";
-    }
-    
-    dcmStatus.innerHTML = `<span class="status-badge" style="background: ${statusColor}">${statusText}</span>`;
+    let dcmColor = "#2ecc71";
+    if (data.DCM_status.includes("Worsening")) dcmColor = "#e74c3c";
+    else if (data.DCM_status.includes("No Significant")) dcmColor = "#f39c12";
+    document.getElementById("dcmStatus").innerHTML =
+      `<span class="status-badge" style="background:${dcmColor}">${data.DCM_status}</span>`;
 
-    // Smooth scroll to results
     document.getElementById("ddsSection").scrollIntoView({ behavior: 'smooth' });
 
   } catch (err) {
     console.error(err);
-    showAlert("Backend error. Please check if Flask server is running.", "error");
-    
-    // Demo data for presentation
-    document.getElementById("ddsSection").classList.remove("hidden");
-    document.getElementById("adaptiveMeal").classList.remove("hidden");
-    document.getElementById("ndvSection").classList.remove("hidden");
-    document.getElementById("dcmSection").classList.remove("hidden");
-    
-    document.getElementById("ddsScore").innerText = "7.5";
-    document.getElementById("dwDdsScore").innerText = "8.2";
-    document.getElementById("riskLevel").innerText = "Medium";
-    document.getElementById("riskLevel").style.color = "#f39c12";
-    
-    document.getElementById("ddsMessage").innerHTML = '⚠️ Demo Mode: Using sample data';
-    
-    document.getElementById("adpBreakfast").innerText = "Quinoa bowl with berries";
-    document.getElementById("adpLunch").innerText = "Lentil soup with whole grain bread";
-    document.getElementById("adpDinner").innerText = "Grilled fish with steamed vegetables";
-    document.getElementById("adpSnack").innerText = "Apple with almond butter";
-    
-    document.getElementById("dcmValue").innerText = "0.65";
-    document.getElementById("dcmStatus").innerHTML = '<span class="status-badge">Positive Momentum</span>';
-    
-    const ndvList = document.getElementById("ndvList");
-    ndvList.innerHTML = "";
-    const demoNDV = { Protein: 15, Carbs: -10, Fats: 5, Fiber: 20 };
-    Object.entries(demoNDV).forEach(([n, v]) => {
-      const div = document.createElement("div");
-      div.className = "ndv-item";
-      let color = v > 0 ? "#2ecc71" : "#e74c3c";
-      div.innerHTML = `
-        <div class="ndv-label">${n}</div>
-        <div class="ndv-value" style="color: ${color}">${v}%</div>
-        <div class="ndv-bar">
-          <div class="ndv-bar-fill" style="width: ${Math.abs(v)}%; background: ${color}"></div>
-        </div>
-      `;
-      ndvList.appendChild(div);
-    });
+    showAlert("Backend error. Please check if server is running.", "error");
   }
 }
 
 /* ================================
-   INITIAL UI STATE
+   INIT
 ================================ */
-
 window.addEventListener("DOMContentLoaded", () => {
-  // Hide all result sections initially
-  [
-    "healthSection",
-    "initialMeal",
-    "foodConsumed",
-    "ddsSection",
-    "adaptiveMeal",
-    "ndvSection",
-    "dcmSection"
-  ].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("hidden");
-  });
+  if (!localStorage.getItem('nutri_user_id')) {
+    window.location.href = '/login';
+    return;
+  }
+
+  const userName = localStorage.getItem('nutri_user_name');
+  if (userName) {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;top:10px;right:15px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:13px;z-index:999;';
+    el.innerHTML = `👤 ${userName} &nbsp;<a href="#" onclick="logout()" style="color:#ffcdd2;font-size:11px;">Logout</a>`;
+    document.body.appendChild(el);
+  }
+
+  ["healthSection","initialMeal","foodConsumed","ddsSection","adaptiveMeal","ndvSection","dcmSection"]
+    .forEach(id => { const el = document.getElementById(id); if (el) el.classList.add("hidden"); });
 
   document.getElementById("bmiResult").innerText = "";
   updateProgressStep(1);
-  
-  // Add smooth scrolling for all buttons
-  document.querySelectorAll('button').forEach(button => {
-    button.addEventListener('click', function(e) {
-      // Don't prevent default, just add smooth scroll after action
-      setTimeout(() => {
-        const nextSection = this.closest('.glass-card')?.nextElementSibling;
-        if (nextSection && !nextSection.classList.contains('hidden')) {
-          nextSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    });
-  });
-  
-  // Check for saved data and populate if exists
+
   const savedProfile = load("userProfile");
   if (savedProfile) {
-    document.getElementById("age").value = savedProfile.age || "";
+    document.getElementById("age").value    = savedProfile.age    || "";
     document.getElementById("height").value = savedProfile.height || "";
     document.getElementById("weight").value = savedProfile.weight || "";
   }
-  
   const savedHealth = load("healthDetails");
   if (savedHealth) {
     document.getElementById("disease").value = savedHealth.disease || "general";
     document.getElementById("allergy").value = savedHealth.allergy || "none";
-    
-    // Set food preference radio
-    if (savedHealth.foodPref === "non-veg") {
-      document.getElementById("nonVeg").checked = true;
-    } else {
-      document.getElementById("veg").checked = true;
-    }
+    if (savedHealth.foodPref === "non-veg") document.getElementById("nonVeg").checked = true;
+    else document.getElementById("veg").checked = true;
   }
 });
 
-// Add CSS for NDV bars (dynamic addition)
+function logout() {
+  localStorage.removeItem('nutri_user_id');
+  localStorage.removeItem('nutri_user_name');
+  window.location.href = '/login';
+}
+
+/* ================================
+   DB FUNCTIONS
+================================ */
+async function saveMealToDB(mealData, msgDivId) {
+  try {
+    await fetch(`${API_URL}/api/save-meal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...mealData, user_id: parseInt(getUserId()) })
+    });
+    if (msgDivId) {
+      document.getElementById(msgDivId).innerText = "✅ Saved!";
+      document.getElementById(msgDivId).style.color = "green";
+    }
+  } catch {
+    if (msgDivId) {
+      document.getElementById(msgDivId).innerText = "❌ Failed.";
+      document.getElementById(msgDivId).style.color = "red";
+    }
+  }
+}
+
+function saveInitialMealPlan() {
+  saveMealToDB({ meal_name: "Initial Meal Plan", calories: null, protein: null, carbs: null, fats: null }, "saveMealMsg");
+}
+function saveAdaptiveMealPlan() {
+  saveMealToDB({ meal_name: "Adaptive Meal Plan", calories: null, protein: null, carbs: null, fats: null }, "saveAdaptiveMsg");
+}
+
+/* ================================
+   INJECTED STYLES
+================================ */
 const style = document.createElement('style');
 style.textContent = `
-  .ndv-item {
-    background: white;
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 10px;
-  }
-  
-  .ndv-label {
-    font-weight: 600;
-    color: var(--dark);
-    margin-bottom: 5px;
-  }
-  
-  .ndv-value {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-  
-  .ndv-bar {
-    height: 8px;
-    background: #e0e0e0;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  
-  .ndv-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.3s ease;
-  }
-  
-  .alert-message.error {
-    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-    color: #721c24;
-    border-left-color: #e74c3c;
-  }
-  
-  .alert-message.warning {
-    background: linear-gradient(135deg, #fff3cd, #ffeeba);
-    color: #856404;
-    border-left-color: #f39c12;
-  }
-  
-  .alert-message.success {
-    background: linear-gradient(135deg, #d4edda, #c3e6cb);
-    color: #155724;
-    border-left-color: #2ecc71;
-  }
-  
-  .fa-spinner {
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+  .radar-chart-wrapper { background:rgba(255,255,255,0.6); border-radius:16px; padding:20px; margin-bottom:8px; border:1px solid rgba(99,102,241,0.15); }
+  .radar-title { font-size:15px; font-weight:600; color:#4f46e5; margin:0 0 4px; }
+  .radar-subtitle { font-size:13px; color:#6b7280; margin:0 0 16px; }
+  .radar-legend { display:flex; align-items:center; gap:6px; margin-top:12px; font-size:12px; color:#6b7280; justify-content:center; }
+  .legend-dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .ndv-status-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .ndv-pill { font-size:12px; padding:4px 12px; border-radius:99px; font-weight:500; }
+  .ndv-item { background:white; border-radius:15px; padding:15px; margin-bottom:10px; }
+  .ndv-label { font-weight:600; margin-bottom:5px; }
+  .ndv-value { font-size:18px; font-weight:700; margin-bottom:8px; }
+  .ndv-bar { height:8px; background:#e0e0e0; border-radius:4px; overflow:hidden; }
+  .ndv-bar-fill { height:100%; border-radius:4px; transition:width 0.3s ease; }
+  .alert-message.error   { background:linear-gradient(135deg,#f8d7da,#f5c6cb); color:#721c24; }
+  .alert-message.warning { background:linear-gradient(135deg,#fff3cd,#ffeeba); color:#856404; }
+  .fa-spinner { animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
 `;
-
 document.head.appendChild(style);
-// ================================
-// DATABASE API FUNCTIONS
-// ================================
-
-const API_URL = "http://127.0.0.1:5000";
-
-// Save a meal to the database
-async function saveMealToDB(mealData) {
-    try {
-        const response = await fetch(`${API_URL}/api/save-meal`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(mealData)
-        });
-        const result = await response.json();
-        console.log("Saved:", result.message);
-        alert("✅ Meal saved successfully!");
-    } catch (error) {
-        console.error("Error saving meal:", error);
-        alert("❌ Failed to save meal.");
-    }
-}
-
-// Get all meals from the database
-async function getMealsFromDB() {
-    try {
-        const response = await fetch(`${API_URL}/api/get-meals`);
-        const meals = await response.json();
-        console.log("Meals:", meals);
-        return meals;
-    } catch (error) {
-        console.error("Error fetching meals:", error);
-    }
-}
-
-// Delete a meal from the database
-async function deleteMealFromDB(mealId) {
-    try {
-        const response = await fetch(`${API_URL}/api/delete-meal/${mealId}`, {
-            method: "DELETE"
-        });
-        const result = await response.json();
-        console.log("Deleted:", result.message);
-        alert("✅ Meal deleted!");
-    } catch (error) {
-        console.error("Error deleting meal:", error);
-    }
-}
-// Save Initial Meal Plan
-function saveInitialMealPlan() {
-    const mealData = {
-        meal_name: "Initial Meal Plan",
-        calories: null,
-        protein: null,
-        carbs: null,
-        fats: null
-    };
-    saveMealToDB(mealData, "saveMealMsg");
-}
-
-// Save Adaptive Meal Plan
-function saveAdaptiveMealPlan() {
-    const mealData = {
-        meal_name: "Adaptive Meal Plan",
-        calories: null,
-        protein: null,
-        carbs: null,
-        fats: null
-    };
-    saveMealToDB(mealData, "saveAdaptiveMsg");
-}
-
-// Updated saveMealToDB with message div support
-async function saveMealToDB(mealData, msgDivId) {
-    try {
-        const response = await fetch(`${API_URL}/api/save-meal`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(mealData)
-        });
-        const result = await response.json();
-        document.getElementById(msgDivId).innerText = "✅ Saved successfully!";
-        document.getElementById(msgDivId).style.color = "green";
-    } catch (error) {
-        document.getElementById(msgDivId).innerText = "❌ Failed to save.";
-        document.getElementById(msgDivId).style.color = "red";
-    }
-}

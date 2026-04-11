@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js for radar chart -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
 
@@ -182,7 +184,6 @@
       </div>
     </div>
 
-    <!-- 💾 SAVE INITIAL MEAL PLAN BUTTON -->
     <button type="button" onclick="saveInitialMealPlan()" class="primary-btn" style="margin-top: 20px;">
       <span>💾 Save Meal Plan</span>
       <i class="fas fa-database"></i>
@@ -302,7 +303,6 @@
       </div>
     </div>
 
-    <!-- 💾 SAVE ADAPTIVE MEAL PLAN BUTTON -->
     <button type="button" onclick="saveAdaptiveMealPlan()" class="primary-btn" style="margin-top: 20px;">
       <span>💾 Save Adaptive Plan</span>
       <i class="fas fa-database"></i>
@@ -310,7 +310,7 @@
     <div id="saveAdaptiveMsg" style="margin-top:10px; font-weight:500;"></div>
   </section>
 
-  <!-- STEP 8: NDV -->
+  <!-- STEP 8: NDV + RADAR CHART -->
   <section class="glass-card hidden" id="ndvSection">
     <div class="card-header">
       <div class="header-icon">
@@ -320,8 +320,33 @@
       <p class="header-subtitle">Detailed nutrient analysis</p>
     </div>
 
-    <div class="ndv-container" id="ndvList">
-      <!-- NDV items will be inserted here -->
+    <!-- ✅ NEW: Radar Chart -->
+    <div class="radar-chart-wrapper">
+      <h3 class="radar-title">
+        <i class="fas fa-spider"></i> Nutrition Radar — Actual vs Recommended
+      </h3>
+      <p class="radar-subtitle">See all 6 nutrients at a glance. Green = your intake, Purple = recommended target.</p>
+      <div style="position: relative; width: 100%; max-width: 420px; margin: 0 auto; height: 340px;">
+        <canvas id="ndvRadarChart"></canvas>
+      </div>
+
+      <!-- Legend -->
+      <div class="radar-legend">
+        <span class="legend-dot" style="background: rgba(99,102,241,0.7);"></span>
+        <span>Your intake</span>
+        <span class="legend-dot" style="background: rgba(16,185,129,0.5); margin-left:16px;"></span>
+        <span>Recommended</span>
+      </div>
+
+      <!-- Status pills -->
+      <div class="ndv-status-pills" id="ndvStatusPills">
+        <!-- Pills inserted by JS -->
+      </div>
+    </div>
+
+    <!-- Original bar list -->
+    <div class="ndv-container" id="ndvList" style="margin-top: 24px;">
+      <!-- NDV bar items inserted by JS -->
     </div>
   </section>
 
