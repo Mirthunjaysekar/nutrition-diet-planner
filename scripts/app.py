@@ -16,7 +16,7 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 
 # ================================
-# MODELS (defined here directly — fixes circular import with models.py)
+# MODELS
 # ================================
 class User(db.Model):
     __tablename__ = 'users'
@@ -28,7 +28,7 @@ class User(db.Model):
 class MealPlan(db.Model):
     __tablename__ = 'meal_plans'
     id           = db.Column(db.Integer, primary_key=True)
-    user_id      = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id      = db.Column(db.Integer, nullable=False)
     meal_name    = db.Column(db.String(200), nullable=False)
     calories     = db.Column(db.Float)
     protein      = db.Column(db.Float)
@@ -40,11 +40,14 @@ class MealPlan(db.Model):
 # CREATE TABLES ON STARTUP
 # ================================
 with app.app_context():
-    db.create_all()
-    print("✅ Tables created successfully!")
+    try:
+        db.create_all()
+        print("✅ Tables created successfully!")
+    except Exception as e:
+        print(f"⚠️ DB init warning: {e}")
 
 # ================================
-# GEMINI CONFIG (new SDK: google-genai)
+# GEMINI CONFIG
 # ================================
 from google import genai
 
@@ -64,7 +67,7 @@ def call_gemini(prompt):
 # ================================
 # DCM STORAGE
 # ================================
-DCM_FILE = "dcm_state.json"
+DCM_FILE = "/tmp/dcm_state.json"
 
 def load_previous_dw_dds():
     if os.path.exists(DCM_FILE):
@@ -84,6 +87,10 @@ def save_current_dw_dds(dw_dds):
 def serve_index():
     return send_from_directory(".", "index.html")
 
+@app.route("/login")
+def serve_login():
+    return send_from_directory(".", "login.html")
+
 @app.route("/script.js")
 def serve_js():
     return send_from_directory(".", "script.js")
@@ -91,6 +98,32 @@ def serve_js():
 @app.route("/style.css")
 def serve_css():
     return send_from_directory(".", "style.css")
+
+
+# ================================
+# LOGIN ROUTE — creates user if not exists
+# ================================
+@app.route("/api/login", methods=["POST"])
+def login():
+    try:
+        data  = request.get_json()
+        name  = data.get("name", "").strip()
+        email = data.get("email", "").strip().lower()
+
+        if not name or not email:
+            return jsonify({"error": "Name and email required"}), 400
+
+        # Find existing user or create new one
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            user = User(name=name, email=email)
+            db.session.add(user)
+            db.session.commit()
+
+        return jsonify({"user_id": user.id, "name": user.name}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 # ================================
@@ -108,24 +141,15 @@ def initial_meal_plan():
 # ================================
 @app.route("/calculate-dds", methods=["POST"])
 def calculate_dds():
-    data = request.json
-    foods = data.get("foods", [])
+    data    = request.json
+    foods   = data.get("foods", [])
     disease = data.get("disease", "general")
+    user_id = data.get("user_id", 1)   # frontend sends user_id from localStorage
 
-    # GEMINI – ACTUAL NUTRITION
     prompt = f"""
-    Estimate total daily nutrition for:
-    {foods}
-
+    Estimate total daily nutrition for: {foods}
     Return ONLY valid JSON with no markdown:
-    {{
-      "calories": number,
-      "protein": number,
-      "carbohydrates": number,
-      "fat": number,
-      "fiber": number,
-      "sodium": number
-    }}
+    {{"calories": number, "protein": number, "carbohydrates": number, "fat": number, "fiber": number, "sodium": number}}
     """
 
     text = call_gemini(prompt)
@@ -142,30 +166,20 @@ def calculate_dds():
         except Exception:
             actual = default_nutrition
 
-    # RECOMMENDED NUTRITION
     recommended = {
         "calories": 2000, "protein": 75, "carbohydrates": 250,
         "fat": 60, "fiber": 30, "sodium": 2300
     }
 
-    # NDV
-    ndv = {
-        n: round((actual[n] - recommended[n]) / recommended[n], 3)
-        for n in recommended
-    }
+    ndv = {n: round((actual[n] - recommended[n]) / recommended[n], 3) for n in recommended}
     ndv_status = {}
     for n, v in ndv.items():
-        if v < -0.1:
-            ndv_status[n] = "Deficient"
-        elif v > 0.1:
-            ndv_status[n] = "Excess"
-        else:
-            ndv_status[n] = "Optimal"
+        if v < -0.1:   ndv_status[n] = "Deficient"
+        elif v > 0.1:  ndv_status[n] = "Excess"
+        else:          ndv_status[n] = "Optimal"
 
-    # DDS
     dds = round(sum(abs(v) for v in ndv.values()) / len(ndv) * 100, 2)
 
-    # DW-DDS
     disease_weights = {
         "diabetes":     {"carbohydrates": 2.0, "calories": 1.5, "fiber": 1.2},
         "hypertension": {"sodium": 2.5, "fat": 1.5, "fiber": 1.2},
@@ -173,40 +187,32 @@ def calculate_dds():
         "gastric":      {"fiber": 1.8, "fat": 1.5, "protein": 1.2},
         "general":      {}
     }
-    weights = disease_weights.get(disease, {})
+    weights      = disease_weights.get(disease, {})
     weighted_sum = sum(abs(ndv[n]) * weights.get(n, 1.0) for n in ndv)
     weight_total = sum(weights.get(n, 1.0) for n in ndv)
-    dw_dds = round((weighted_sum / weight_total) * 100, 2)
+    dw_dds       = round((weighted_sum / weight_total) * 100, 2)
 
-    # DCM
-    prev = load_previous_dw_dds()
+    prev      = load_previous_dw_dds()
     dcm_value = round((prev - dw_dds) / prev, 3) if prev else 0.0
-    if dcm_value > 0.10:
-        dcm_status = "Strong Improvement"
-    elif dcm_value > 0.03:
-        dcm_status = "Moderate Improvement"
-    elif dcm_value < -0.03:
-        dcm_status = "Diet Worsening"
-    else:
-        dcm_status = "No Significant Change"
+    if dcm_value > 0.10:    dcm_status = "Strong Improvement"
+    elif dcm_value > 0.03:  dcm_status = "Moderate Improvement"
+    elif dcm_value < -0.03: dcm_status = "Diet Worsening"
+    else:                   dcm_status = "No Significant Change"
     save_current_dw_dds(dw_dds)
 
-    # RISK
     risk = "Low" if dw_dds < 40 else "Medium" if dw_dds < 60 else "High"
-
-    # ADAPTIVE MEAL
     adaptive = {
         "breakfast": "Vegetable oats with paneer",
-        "lunch": "Brown rice with dal and vegetables",
-        "dinner": "Chapati with curry",
-        "snack": "Fruit or nuts"
+        "lunch":     "Brown rice with dal and vegetables",
+        "dinner":    "Chapati with curry",
+        "snack":     "Fruit or nuts"
     }
 
-    # AUTO-SAVE TO DATABASE
+    # AUTO-SAVE with correct user_id
     try:
         meal_label = ", ".join(foods) if isinstance(foods, list) else str(foods)
         new_meal = MealPlan(
-            user_id=1,
+            user_id=user_id,
             meal_name=meal_label[:200],
             calories=actual.get("calories"),
             protein=actual.get("protein"),
@@ -217,17 +223,18 @@ def calculate_dds():
         db.session.commit()
     except Exception as db_err:
         print(f"⚠️ DB save failed: {db_err}")
+        db.session.rollback()
 
     return jsonify({
-        "actual_nutrition": actual,
+        "actual_nutrition":    actual,
         "recommended_nutrition": recommended,
-        "NDV": ndv,
-        "NDV_status": ndv_status,
-        "DDS": dds,
-        "DW_DDS": dw_dds,
-        "DCM_value": dcm_value,
-        "DCM_status": dcm_status,
-        "risk_level": risk,
+        "NDV":         ndv,
+        "NDV_status":  ndv_status,
+        "DDS":         dds,
+        "DW_DDS":      dw_dds,
+        "DCM_value":   dcm_value,
+        "DCM_status":  dcm_status,
+        "risk_level":  risk,
         "adaptive_meal_plan": adaptive
     })
 
@@ -251,13 +258,15 @@ def save_meal():
         db.session.commit()
         return jsonify({"message": "✅ Meal saved successfully!"}), 201
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/get-meals', methods=['GET'])
 def get_meals():
     try:
-        meals = MealPlan.query.all()
-        result = [{
+        user_id = request.args.get('user_id', 1)
+        meals   = MealPlan.query.filter_by(user_id=user_id).all()
+        result  = [{
             "id":        m.id,
             "meal_name": m.meal_name,
             "calories":  m.calories,
@@ -280,6 +289,7 @@ def delete_meal(meal_id):
         db.session.commit()
         return jsonify({"message": "✅ Meal deleted!"}), 200
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 
