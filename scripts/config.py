@@ -1,13 +1,17 @@
-# scripts/config.py
-class Config:
-    MYSQL_HOST     = "yamabiko.proxy.rlwy.net"
-    MYSQL_PORT     = 25698
-    MYSQL_USER     = "root"
-    MYSQL_PASSWORD = "rIWVkIdRhMNFYGjchBEKZYmedSbNtsrP"
-    MYSQL_DB       = "railway"
+import os
 
+class Config:
     SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}"
-        f"@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
+        "mysql+pymysql://root:YktoejwnRiTMesuwIeMgDDNIyRxtwPVi"
+        "@metro.proxy.rlwy.net:47605/railway"
     )
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+        "pool_timeout": 20,
+        "pool_size": 5,
+        "max_overflow": 2,
+        "connect_args": {"connect_timeout": 10}
+    }
