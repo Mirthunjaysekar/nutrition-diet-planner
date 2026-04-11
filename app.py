@@ -1,24 +1,40 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from config import Config
 import google.generativeai as genai
 import json
 import re
 import os
-from flask_sqlalchemy import SQLAlchemy
-from config import Config
+
+# ================================
+# APP INIT
+# ================================
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
 # ================================
-# GEMINI CONFIG
+# MODELS (moved here — must be after db, before db.create_all)
 # ================================
-genai.configure(api_key="AIzaSyCMCvp7Uk89_fhHggGtUCe6NgNQiHUI82I")
-model = genai.GenerativeModel("gemini-3-flash-preview")
+from models import User, MealPlan
 
 # ================================
-# 🔥 DCM STORAGE
+# CREATE TABLES ON STARTUP
+# ================================
+with app.app_context():
+    db.create_all()
+    print("✅ Tables created successfully!")
+
+# ================================
+# GEMINI CONFIG
+# ================================
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyCMCvp7Uk89_fhHggGtUCe6NgNQiHUI82I"))
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# ================================
+# DCM STORAGE
 # ================================
 DCM_FILE = "dcm_state.json"
 
@@ -50,7 +66,7 @@ def safe_gemini_text(response):
 
 
 # ================================
-# 🔥 SERVE FRONTEND FILES (NO 404)
+# SERVE FRONTEND FILES
 # ================================
 @app.route("/")
 def serve_index():
@@ -68,17 +84,13 @@ def serve_css():
 
 
 # ================================
-# ✅ INITIAL MEAL PLAN ROUTE
+# INITIAL MEAL PLAN ROUTE
 # ================================
 @app.route("/initial-meal-plan")
 def initial_meal_plan():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     json_path = os.path.join(base_dir, "data", "processed")
-
-    return send_from_directory(
-        json_path,
-        "initial_meal_plan.json"
-    )
+    return send_from_directory(json_path, "initial_meal_plan.json")
 
 
 # ================================
@@ -171,18 +183,16 @@ def calculate_dds():
     # DW-DDS
     # ----------------------------
     disease_weights = {
-        "diabetes": {"carbohydrates": 2.0, "calories": 1.5, "fiber": 1.2},
-        "hypertension": {"sodium": 2.5, "fat": 1.5, "fiber": 1.2},
-        "obesity": {"calories": 2.0, "fat": 1.8, "carbohydrates": 1.5},
-        "gastric": {"fiber": 1.8, "fat": 1.5, "protein": 1.2},
-        "general": {}
+        "diabetes":    {"carbohydrates": 2.0, "calories": 1.5, "fiber": 1.2},
+        "hypertension":{"sodium": 2.5, "fat": 1.5, "fiber": 1.2},
+        "obesity":     {"calories": 2.0, "fat": 1.8, "carbohydrates": 1.5},
+        "gastric":     {"fiber": 1.8, "fat": 1.5, "protein": 1.2},
+        "general":     {}
     }
 
     weights = disease_weights.get(disease, {})
-
     weighted_sum = sum(abs(ndv[n]) * weights.get(n, 1.0) for n in ndv)
     weight_total = sum(weights.get(n, 1.0) for n in ndv)
-
     dw_dds = round((weighted_sum / weight_total) * 100, 2)
 
     # ----------------------------
@@ -217,6 +227,24 @@ def calculate_dds():
         "snack": "Fruit or nuts"
     }
 
+    # ----------------------------
+    # AUTO-SAVE TO DATABASE
+    # ----------------------------
+    try:
+        meal_label = ", ".join(foods) if isinstance(foods, list) else str(foods)
+        new_meal = MealPlan(
+            user_id=1,
+            meal_name=meal_label[:200],
+            calories=actual.get("calories"),
+            protein=actual.get("protein"),
+            carbs=actual.get("carbohydrates"),
+            fats=actual.get("fat")
+        )
+        db.session.add(new_meal)
+        db.session.commit()
+    except Exception as db_err:
+        print(f"⚠️ DB save failed: {db_err}")
+
     return jsonify({
         "actual_nutrition": actual,
         "recommended_nutrition": recommended,
@@ -229,28 +257,31 @@ def calculate_dds():
         "risk_level": risk,
         "adaptive_meal_plan": adaptive
     })
+
+
 # ================================
 # DATABASE ROUTES
 # ================================
 
-# Save a meal plan
+# Save a meal plan manually
 @app.route('/api/save-meal', methods=['POST'])
 def save_meal():
     try:
         data = request.get_json()
         new_meal = MealPlan(
-            user_id   = data.get('user_id', 1),
-            meal_name = data['meal_name'],
-            calories  = data.get('calories'),
-            protein   = data.get('protein'),
-            carbs     = data.get('carbs'),
-            fats      = data.get('fats')
+            user_id=data.get('user_id', 1),
+            meal_name=data['meal_name'],
+            calories=data.get('calories'),
+            protein=data.get('protein'),
+            carbs=data.get('carbs'),
+            fats=data.get('fats')
         )
         db.session.add(new_meal)
         db.session.commit()
         return jsonify({"message": "✅ Meal saved successfully!"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # Get all meal plans
 @app.route('/api/get-meals', methods=['GET'])
@@ -272,6 +303,7 @@ def get_meals():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # Delete a meal plan
 @app.route('/api/delete-meal/<int:meal_id>', methods=['DELETE'])
 def delete_meal(meal_id):
@@ -285,11 +317,10 @@ def delete_meal(meal_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
-    # At the bottom of app.py
-from models import User, MealPlan
 
-with app.app_context():
-    db.create_all()
-    print("✅ Tables created successfully!")
+# ================================
+# RUN
+# ================================
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)
