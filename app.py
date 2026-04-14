@@ -206,14 +206,36 @@ def calculate_dds():
 def save_meal():
     try:
         data = request.get_json()
-        db.session.add(MealPlan(
-            user_id=data.get('user_id', 1), meal_name=data['meal_name'],
-            calories=data.get('calories'), protein=data.get('protein'),
-            carbs=data.get('carbs'), fats=data.get('fats')
-        ))
+
+        user_id   = data.get('user_id', 1)
+        meal_name = data.get('meal_name', '').strip()
+        calories  = data.get('calories')
+        protein   = data.get('protein')
+        carbs     = data.get('carbs')
+        fats      = data.get('fats')
+
+        if not meal_name:
+            return jsonify({"error": "Meal name is required"}), 400
+
+        new_meal = MealPlan(
+            user_id=user_id,
+            meal_name=meal_name[:200],
+            calories=calories,
+            protein=protein,
+            carbs=carbs,
+            fats=fats
+        )
+
+        db.session.add(new_meal)
         db.session.commit()
-        return jsonify({"message": "✅ Meal saved!"}), 201
+
+        return jsonify({
+            "message": "✅ Meal saved successfully!",
+            "meal_id": new_meal.id
+        }), 201
+
     except Exception as e:
+        print("ERROR:", e)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
