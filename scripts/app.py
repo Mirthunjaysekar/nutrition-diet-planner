@@ -44,7 +44,7 @@ with app.app_context():
 # GEMINI
 # ================================
 from google import genai
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyCMCvp7Uk89_fhHggGtUCe6NgNQiHUI82I"))
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyD1t6pKaT-onMsZir2RZU4ObAb14aC6yWU"))
 
 def call_gemini(prompt):
     try:

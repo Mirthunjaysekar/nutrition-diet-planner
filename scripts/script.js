@@ -242,7 +242,7 @@ async function calculateDDS() {
       if (Math.abs(v) > 30) color = "#e74c3c";
       else if (Math.abs(v) > 15) color = "#f39c12";
       div.innerHTML = `
-        <div class="ndv-label">${n}</div>
+        <div class="ndv-l abel">${n}</div>
         <div class="ndv-value" style="color:${color}">${v}</div>
         <div class="ndv-bar">
           <div class="ndv-bar-fill" style="width:${Math.min(Math.abs(v)*100,100)}%;background:${color}"></div>
@@ -333,7 +333,27 @@ async function saveMealToDB(mealData, msgDivId) {
 }
 
 function saveInitialMealPlan() {
-  saveMealToDB({ meal_name: "Initial Meal Plan", calories: null, protein: null, carbs: null, fats: null }, "saveMealMsg");
+  const breakfast = document.getElementById("initBreakfast")?.innerText || "";
+  const lunch     = document.getElementById("initLunch")?.innerText || "";
+  const dinner    = document.getElementById("initDinner")?.innerText || "";
+  const snack     = document.getElementById("initSnack")?.innerText || "";
+
+  // ✅ DEBUG (IMPORTANT)
+  console.log("Meals:", breakfast, lunch, dinner, snack);
+
+  const mealText = `${breakfast}, ${lunch}, ${dinner}, ${snack}`;
+
+  const mealData = {
+    meal_name: mealText,   // ✅ REAL DATA
+    calories: 1800,
+    protein: 65,
+    carbs: 220,
+    fats: 55
+  };
+
+  console.log("Sending to DB:", mealData);
+
+  saveMealToDB(mealData, "saveMealMsg");
 }
 function saveAdaptiveMealPlan() {
   saveMealToDB({ meal_name: "Adaptive Meal Plan", calories: null, protein: null, carbs: null, fats: null }, "saveAdaptiveMsg");
